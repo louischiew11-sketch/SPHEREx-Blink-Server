@@ -179,6 +179,11 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_HEAD(self):  # Render's health check uses HEAD
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -188,6 +193,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
         q = {k: v[0] for k, v in urllib.parse.parse_qs(u.query).items()}
+        if u.path in ("", "/"):
+            return self._send(200, {"ok": True, "message": "SPHEREx Blink server is running. Try /health or /field?ra=133.795&dec=-7.245"})
+        if u.path == "/favicon.ico":
+            self.send_response(204)
+            return self.end_headers()
         if u.path == "/health":
             return self._send(200, {"ok": True})
         if u.path != "/field":
